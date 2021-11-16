@@ -38,7 +38,7 @@ def ConectarBaseDeDatos():
     global cnx
     global curs
     try:
-        cnx = mysql.connector.connect(user='addCorreo', password='CorreoV@lidator2021', host='192.168.100.86',
+        cnx = mysql.connector.connect(user='addCorreo', password='', host='192.168.100.86',
                                       database='Validator')
         curs = cnx.cursor()
         print("Conectado a la BD")
