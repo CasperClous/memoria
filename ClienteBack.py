@@ -1,7 +1,7 @@
 from _thread import *
 import mysql.connector
 from mysql.connector import errorcode
-import socket
+import socketserver
 global cnx
 global curs
 
@@ -9,7 +9,6 @@ global curs
 def insert1(FROM, primerReceived, penultimoReceived, MSGID, AUTHRESULT):
     ConectarBaseDeDatos()
     try:
-        print("Insert1")
         add_Correo = "INSERT INTO Coleccion (FROMM, PrimerReceived, PenultimoReceived, MSGID, AuthenticationResult) VALUES (%s,%s,%s,%s,%s)"
         val = (FROM, primerReceived, penultimoReceived, MSGID, AUTHRESULT)
         curs.execute(add_Correo, val)
@@ -23,7 +22,6 @@ def insert1(FROM, primerReceived, penultimoReceived, MSGID, AUTHRESULT):
 def insert2(FROM, primerReceived, MSGID, AUTHRESULT):
     ConectarBaseDeDatos()
     try:
-        print("Insert2")
         add_Correo = "INSERT INTO Coleccion (FROMM, PrimerReceived, MSGID, AuthenticationResult) VALUES (%s,%s,%s,%s)"
         val = (FROM, primerReceived, MSGID, AUTHRESULT)
         curs.execute(add_Correo, val)
@@ -38,10 +36,9 @@ def ConectarBaseDeDatos():
     global cnx
     global curs
     try:
-        cnx = mysql.connector.connect(user='addCorreo', password='', host='192.168.100.86',
+        cnx = mysql.connector.connect(user='addCorreo', password='CorreoV@lidator2021', host='192.168.100.86',
                                       database='Validator')
         curs = cnx.cursor()
-        print("Conectado a la BD")
     except mysql.connector.Error as err:
         if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
             print("Something is wrong with your user name or password")
@@ -52,59 +49,37 @@ def ConectarBaseDeDatos():
             cnx.close()
 
 
-def Servidor():
-    ServerSideSocket = socket.socket()
-    host = '192.168.100.86'
-    port = 10001
-    ThreadCount = 0
-    try:
-        ServerSideSocket.bind((host, port))
-    except socket.error as e:
-        print(str(e))
+class MyTCPHandler(socketserver.BaseRequestHandler):
+    def handle(self):
+        separador = " ##### "
+        while True:
+            datos = self.request.recv(1024).decode()
+            datos = datos.split(separador)
+            if datos[0].strip(separador) == "byebye":
+                break
+            if str(datos[0].strip(separador)).isdigit():
+                if int(datos[0].strip(separador)) == 1:
+                    FROMM = datos[1].strip(separador)
+                    primerReceived = datos[2].strip(separador)
+                    penultimoReceived = datos[3].strip(separador)
+                    MSGID = datos[4].strip(separador)
+                    AUTHRESULT = datos[5].strip(separador)
+                    insert1(FROMM, primerReceived, penultimoReceived, MSGID, AUTHRESULT)
+                elif int(datos[0].strip(separador)) == 2:
+                    FROMM = datos[1].strip(separador)
+                    primerReceived = datos[2].strip(separador)
+                    MSGID = datos[3].strip(separador)
+                    AUTHRESULT = datos[4].strip(separador)
+                    insert2(FROMM, primerReceived, MSGID, AUTHRESULT)
+                else:
+                    connection.close()
 
-    print('Socket is listening..')
-    ServerSideSocket.listen(5)
-    while True:
-        Client, address = ServerSideSocket.accept()
-        print('Connected to: ' + address[0] + ':' + str(address[1]))
-        start_new_thread(multi_threaded_client, (Client,))
-        ThreadCount += 1
-        print('Thread Number: ' + str(ThreadCount))
-    ServerSideSocket.close()
+if __name__ == "__main__":
+    HOST, PORT = '192.168.100.86', 10001
 
+    # Create the server, binding to localhost on port 9999
+    server = socketserver.TCPServer((HOST, PORT), MyTCPHandler)
 
-def multi_threaded_client(connection):
-    while True:
-        datos = connection.recv(2048).decode()
-        datos = datos.split(" AE ")
-        print(datos)
-        if datos[0].strip(" AE ") == "byebye":
-            break
-        if int(datos[0].strip(" AE ")) == 1:
-            FROMM = datos[1].strip(" AE ")
-            print(FROMM)
-            primerReceived = datos[2].strip(" AE ")
-            print(primerReceived)
-            penultimoReceived = datos[3].strip(" AE ")
-            print(penultimoReceived)
-            MSGID = datos[4].strip(" AE ")
-            print(MSGID)
-            AUTHRESULT = datos[5].strip(" AE ")
-            print(AUTHRESULT)
-            insert1(FROMM, primerReceived, penultimoReceived, MSGID, AUTHRESULT)
-        elif int(datos[0].strip(" AE ")) == 2:
-            print(datos)
-            FROMM = datos[1].strip(" AE ")
-            print(FROMM)
-            primerReceived = datos[2].strip(" AE ")
-            print(primerReceived)
-            MSGID = datos[3].strip(" AE ")
-            print(MSGID)
-            AUTHRESULT = datos[4].strip(" AE ")
-            print(AUTHRESULT)
-            insert2(FROMM, primerReceived, MSGID, AUTHRESULT)
-        else:
-            connection.close()
-
-
-Servidor()
+    # Activate the server; this will keep running until you
+    # interrupt the program with Ctrl-C
+    server.serve_forever()
