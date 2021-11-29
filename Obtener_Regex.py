@@ -11,7 +11,7 @@ def ConectarBaseDeDatos():
     cnx = ""
     curs = ""
     try:
-        cnx = mysql.connector.connect(user='obtenerRegex', password='Obtener17489563', host='localhost',
+        cnx = mysql.connector.connect(user='obtenerRegex', password='', host='localhost',
                                       database='Validator', auth_plugin='mysql_native_password')
         curs = cnx.cursor()
         print("Conectado a la BD")
@@ -30,7 +30,7 @@ def InsertBD():
     cnx = ""
     curs =""
     try:
-        cnx = mysql.connector.connect(user='addCorreo', password='CorreoV@lidator2021', host='192.168.100.86', database='Validator', auth_plugin='mysql_native_password')
+        cnx = mysql.connector.connect(user='addCorreo', password='', host='192.168.100.86', database='Validator', auth_plugin='mysql_native_password')
         curs = cnx.cursor()
         print("Conectado a la BD")
     except mysql.connector.Error as err:
