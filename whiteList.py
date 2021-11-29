@@ -27,7 +27,7 @@ def ConectarBaseDeDatos():
     cnx = ""
     curs = ""
     try:
-        cnx = mysql.connector.connect(user='pluggin', password='PluginV@lidator2021', host='192.168.100.86',
+        cnx = mysql.connector.connect(user='pluggin', password='', host='192.168.100.86',
                                       database='Validator')
         curs = cnx.cursor()
         print("Conectado a la BD")
