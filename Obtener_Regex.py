@@ -7,34 +7,12 @@ import itertools
 import time
 
 
-global cnx
-global curs
-global valores
-
-
 def ConectarBaseDeDatos():
-    global cnx
-    global curs
-    try:
-        cnx = mysql.connector.connect(user='obtenerRegex', password='', host='localhost',
-                                      database='Validator', auth_plugin='mysql_native_password')
-        curs = cnx.cursor()
-        print("Conectado a la BD")
-    except mysql.connector.Error as err:
-        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-            print("Something is wrong with your user name or password")
-        elif err.errno == errorcode.ER_BAD_DB_ERROR:
-            print("Database does not exist")
-        else:
-            print(err)
-            cnx.close()
-
-
-def InsertBD():
     cnx = ""
-    curs =""
+    curs = ""
     try:
-        cnx = mysql.connector.connect(user='addCorreo', password='', host='192.168.100.86', database='Validator', auth_plugin='mysql_native_password')
+        cnx = mysql.connector.connect(user='obtenerRegex', password='Obtener17489563', host='localhost',
+                                      database='Validator', auth_plugin='mysql_native_password')
         curs = cnx.cursor()
         print("Conectado a la BD")
     except mysql.connector.Error as err:
@@ -48,27 +26,46 @@ def InsertBD():
     return cnx, curs
 
 
-def getRegexMSGID(regex):
+def InsertBD():
+    cnx = ""
+    curs =""
+    try:
+        cnx = mysql.connector.connect(user='addCorreo', password='CorreoV@lidator2021', host='192.168.100.86', database='Validator', auth_plugin='mysql_native_password')
+        curs = cnx.cursor()
+        print("Conectado a la BD")
+    except mysql.connector.Error as err:
+        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
+        else:
+            print(err)
+            cnx.close()
+    return cnx, curs
+
+
+def getRegexMSGID(regex, valores):
     aux = []
     for line in valores:
         if re.match(regex, line) is not None:
             aux.append(line)
     for ele in aux:
         valores.remove(ele)
+    return valores
 
 
 def MSGID(line):
-    global valores
+    valores = []
+    regexes = []
     query = f"SELECT MSGID FROM Validator.Coleccion WHERE FROMM = \"{line}\" "
     curs.execute(query)
     resultadosFROMM = curs.fetchall()
     for linea in resultadosFROMM:
-        linea = linea[0].translate({ord(c): None for c in string.whitespace})
-        linea = linea[12:].rstrip(">")
+        linea = linea[0]
         valores.append(linea.replace("]","").replace("[",""))
     while len(valores) > 0:
         regex = getRegexId(valores)
-        getRegexMSGID(regex)
+        valores = getRegexMSGID(regex, valores)
         regexes.append(regex)
     stringa = ""
     for a in regexes:
@@ -79,39 +76,40 @@ def MSGID(line):
 
 def getRegexReceived(FROMM, Received):
     global valores
+    valores = []
     query = f"SELECT {Received} FROM Validator.Coleccion WHERE FROMM = \"{FROMM}\" "
     curs.execute(query)
     resultados = curs.fetchall()
     auxfrom = []
     auxby = []
-    regexprimer = ""
+    regexes = []
     for line in resultados:
-        if line[0] == "":
+        if line[0] is not None:
             linea = line[0].split(" ")
             for i,ele in enumerate(linea):
                 if ele == "from":
                     auxfrom.append(linea[i+1].replace("[","").replace("]",""))
                 if ele == "by" and not linea[i+1] == "mx.google.com":
                     auxby.append(linea[i+1].replace("[","").replace("]",""))
-        valores = list(dict.fromkeys(auxfrom))
-        while len(valores) > 0:
-            regex = getRegexId(valores)
-            getRegexMSGID(regex)
-            regexes.append(regex)
-        stringa = ""
-        for a in regexes:
-            stringa += a + ";"
-        stringaa = stringa[:-1]
-        valores = list(dict.fromkeys(auxby))
-        while len(valores) > 0:
-            regex = getRegexId(valores)
-            getRegexMSGID(regex)
-            regexes.append(regex)
-        stringa = ""
-        for a in regexes:
-            stringa += a + ";"
-        stringab = stringa[:-1]
-        regexprimer = stringaa + ";" + stringab
+    valores = auxfrom
+    while len(valores) > 0:
+        regex = getRegexId(valores)
+        valores = getRegexMSGID(regex, valores)
+        regexes.append(regex)
+    stringa = ""
+    for a in regexes:
+        stringa += a + ";"
+    stringaa = stringa[:-1]
+    valores = auxby
+    while len(valores) > 0:
+        regex = getRegexId(valores)
+        valores = getRegexMSGID(regex, valores)
+        regexes.append(regex)
+    stringa = ""
+    for a in regexes:
+        stringa += a + ";"
+    stringab = stringa[:-1]
+    regexprimer = stringaa + ";" + stringab
     return regexprimer
 
 
@@ -159,27 +157,25 @@ def get_UTC(FROMM):
     return valor
 
 
-ConectarBaseDeDatos()
+cnx, curs = ConectarBaseDeDatos()
 query = f"SELECT DISTINCT FROMM FROM Validator.Coleccion WHERE FROMM IN (SELECT DISTINCT FROMM FROM Validator.Coleccion) "
-#query = f"SELECT FROMM FROM Validator.Coleccion WHERE FROMM = \'From: MACH <contacto@mail.somosmach.com>\'"
+#query = f"SELECT FROMM FROM Validator.Coleccion WHERE FROMM = \"contactos@bancoedwards.cl\""
 curs.execute(query)
 resultados = curs.fetchall()
-regexes = []
 CNXX, CURSS = InsertBD()
 maxlen = 0
 for i, line in enumerate(resultados):
-    regexes = []
     valores = []
     FROMM = line[0]
     regexMessageID = MSGID(FROMM)
     auth = AuthCantidad(FROMM)
     UTC = get_UTC(FROMM)
-    primerR = getRegexReceived(FROMM, "PrimerReceived")#TODO OK HASTA AQUI
+    primerR = getRegexReceived(FROMM, "PrimerReceived")
     penUlti = getRegexReceived(FROMM, "PenultimoReceived")
     msgid = len(regexMessageID)
     try:
-        query = f"INSERT INTO Validator.Correo (RegexID, Fromm, Primero, Penultimo, UTC) VALUES ( %s, %s, %s, %s, %s) "
-        values = (regexMessageID,FROMM, primerR, penUlti, UTC)
+        query = f"INSERT INTO Validator.Correo (RegexID, Fromm, Primero, Penultimo, UTC, AUTH) VALUES ( %s, %s, %s, %s, %s, %s) "
+        values = (regexMessageID,FROMM, primerR, penUlti, UTC, auth)
         CURSS.execute(query, values)
         CNXX.commit()
     except mysql.connector.Error as error:

@@ -1,8 +1,6 @@
 import imaplib
 import socket
 import string
-import time
-
 
 ClientSocket = socket.socket()
 host = 'validator-tb.ydns.eu'
@@ -55,7 +53,6 @@ imap.select('Inbox')
 typ, data = imap.search(None, 'ALL')
 print("Enviando Informacion")
 for num in data[0].split():
-    time.sleep(0.25)
     typ, data = imap.fetch(num, '(BODY[HEADER.FIELDS (MESSAGE-ID)])')
     MSGID = limpiarMSGID(data[0][1].decode())
     typ, data = imap.fetch(num, '(BODY[HEADER.FIELDS (FROM)])')

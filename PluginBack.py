@@ -1,0 +1,134 @@
+import re
+import asyncio
+import websockets
+import mysql.connector
+from mysql.connector import errorcode
+
+
+
+def ConectarBaseDeDatos():
+    cnx = ""
+    curs = ""
+    try:
+        cnx = mysql.connector.connect(user='pluggin', password='PluginV@lidator2021', host='192.168.100.86',
+                                      database='Validator')
+        curs = cnx.cursor()
+        print("Conectado a la BD")
+    except mysql.connector.Error as err:
+        if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+            print("Something is wrong with your user name or password")
+        elif err.errno == errorcode.ER_BAD_DB_ERROR:
+            print("Database does not exist")
+        else:
+            print(err)
+            cnx.close()
+    return cnx, curs
+
+
+async def BackEnd(websocket, path):
+    cnx, curs = ConectarBaseDeDatos()
+    score = 0
+    primerreceived = await websocket.recv()
+    penreceived = await websocket.recv()
+    fromm = await websocket.recv()
+    msgid = await websocket.recv()
+    auth = await websocket.recv()
+    fromm = fromm.split("<")
+    if len(fromm) > 1:
+        fromm = fromm[1].replace(">", "")
+    else:
+        fromm =fromm[0].replace(">", "")
+    msgid = msgid.replace("<", "").replace(">", "")
+    query = f"SELECT * FROM Correo WHERE FROMM = \"{fromm}\""
+    curs.execute(query)
+    res = curs.fetchall()
+    if res:
+        if primerreceived != penreceived:
+            for i,line in enumerate(res[0]):
+                if i == 0:
+                    msgidsbd = res[0][i].split(";")
+                    for msgidbd in msgidsbd:
+                        if re.match(msgidbd, msgid):
+                            score += 1
+                            break
+                elif i == 2:
+                    primerosBD = res[0][i].split(";")
+                    for primeroBD in primerosBD:
+                        if re.findall(primeroBD, primerreceived):
+                            score += 0.75
+                            break
+                elif i == 3:
+                    pensbd = res[0][i].split(";")
+                    for penbd in pensbd:
+                        if re.findall(penbd, penreceived):
+                            score += 0.75
+                            break
+                elif i == 4:
+                    utcsbd = res[0][i]
+                    if utcsbd:
+                        utcsbd = res[0][i].split(";")
+                        for utcbd in utcsbd:
+                            try:
+                                utcbd = "[" + utcbd + "]"
+                                if re.findall(utcbd, primerreceived):
+                                    score += 1
+                                    break
+                            except:
+                                utcbd = "(" + utcbd + ")"
+                                if re.findall(utcbd, primerreceived):
+                                    score += 1
+                                    break
+                    else:
+                        score += 1
+                elif i == 5:
+                    authsbd = res[0][i].split(";")
+                    maxi = int(authsbd[0])
+                    mini = int(authsbd[1])
+                    pattern = "(pass)"
+                    a = re.findall(pattern, auth)
+                    if int(len(a)) in range(mini, maxi+1):
+                        score += 1.5
+        elif primerreceived == penreceived:
+            for i,line in enumerate(res[0]):
+                if i == 0:
+                    msgidsbd = res[0][i].split(";")
+                    for msgidbd in msgidsbd:
+                        if re.match(msgidbd, msgid):
+                            score += 1
+                            break
+                elif i == 2:
+                    primerosBD = res[0][i].split(";")
+                    for primeroBD in primerosBD:
+                        if re.findall(primeroBD, primerreceived):
+                            score += 1.5
+                            break
+                elif i == 4:
+                    utcsbd = res[0][i].split(";")
+                    for utcbd in utcsbd:
+                        if len(utcbd) > 5:
+                            utcbd = "[" + utcbd + "]"
+                        else:
+                            utcbd = "(" + utcbd + ")"
+                        if re.findall(utcbd, primerreceived):
+                            score += 1
+                            break
+                elif i == 5:
+                    authsbd = res[0][i].split(";")
+                    maxi = int(authsbd[0])
+                    mini = int(authsbd[1])
+                    pattern = "(pass)"
+                    a = re.findall(pattern, auth)
+                    if int(len(a)) in range(mini, maxi+1):
+                        score += 1.5
+    else:
+        score = 6
+    await websocket.send(str(score))
+
+
+
+
+
+
+start_server = websockets.serve(BackEnd, "192.168.100.86", 10000)
+asyncio.get_event_loop().run_until_complete(start_server)
+asyncio.get_event_loop().run_forever()
