@@ -10,7 +10,7 @@ def ConectarBaseDeDatos():
     cnx = ""
     curs = ""
     try:
-        cnx = mysql.connector.connect(user='pluggin', password='', host='192.168.100.86',
+        cnx = mysql.connector.connect(user='pluggin', password='PluginV@lidator2021', host='192.168.100.86',
                                       database='Validator')
         curs = cnx.cursor()
         print("Conectado a la BD")
@@ -25,7 +25,18 @@ def ConectarBaseDeDatos():
     return cnx, curs
 
 
+def get_cantidadBlackList(fromm, curs):
+    query = f"SELECT cantidad FROM blacklist WHERE FROMM = \"{fromm}\""
+    curs.execute(query)
+    cantidad = curs.fetchall()
+    if cantidad:
+        return int(cantidad)
+    else:
+        return 0
+
+
 async def BackEnd(websocket, path):
+    separador = " # "
     cnx, curs = ConectarBaseDeDatos()
     score = 0
     primerreceived = await websocket.recv()
@@ -42,35 +53,87 @@ async def BackEnd(websocket, path):
     query = f"SELECT * FROM Correo WHERE FROMM = \"{fromm}\""
     curs.execute(query)
     res = curs.fetchall()
-    if res:
+    cantidad = get_cantidadBlackList(fromm, curs)
+    if res and cantidad < 5:
         if primerreceived != penreceived:
             for i,line in enumerate(res[0]):
                 if i == 0:
-                    msgidsbd = res[0][i].split(";")
+                    msgidsbd = res[0][i].split(separador)
                     for msgidbd in msgidsbd:
-                        if re.match(msgidbd, msgid):
+                        if re.match(msgidbd, msgid.replace("[","").replace("]","")):
                             score += 1
+                            print("PASO MSGID")
                             break
                 elif i == 2:
-                    primerosBD = res[0][i].split(";")
+                    primerosBD = res[0][i].split(separador)
                     for primeroBD in primerosBD:
                         if re.findall(primeroBD, primerreceived):
+                            print("PASO PRIMERRCV")
                             score += 0.75
                             break
                 elif i == 3:
-                    pensbd = res[0][i].split(";")
+                    pensbd = res[0][i].split(separador)
                     for penbd in pensbd:
                         if re.findall(penbd, penreceived):
+                            print("PASO PENRECEV")
                             score += 0.75
                             break
                 elif i == 4:
                     utcsbd = res[0][i]
                     if utcsbd:
-                        utcsbd = res[0][i].split(";")
+                        utcsbd = res[0][i].split(separador)
                         for utcbd in utcsbd:
+                            pattern = "([\-|\+]\d\d\d\d|(\(\w\w\w\)))"
+                            if re.findall(pattern, primerreceived):
+                                try:
+                                    utcbd = "[" + utcbd + "]"
+                                    if re.findall(utcbd, primerreceived):
+                                        print("PASO UTC")
+                                        score += 1
+                                        break
+                                except:
+                                    utcbd = "(" + utcbd + ")"
+                                    if re.findall(utcbd, primerreceived):
+                                        score += 1
+                                        break
+                            else:
+                                score += 1
+                    else:
+                        score += 1
+                elif i == 5:
+                    authsbd = res[0][i].split(separador)
+                    maxi = int(authsbd[0])
+                    mini = int(authsbd[1])
+                    pattern = "(pass)"
+                    a = re.findall(pattern, auth)
+                    if int(len(a)) in range(mini, maxi+1):
+                        print("PASO AUTH")
+                        score += 1.5
+        elif primerreceived == penreceived:
+            for i,line in enumerate(res[0]):
+                if i == 0:
+                    msgidsbd = res[0][i].split(separador)
+                    for msgidbd in msgidsbd:
+                        if re.match(msgidbd, msgid.replace("[","").replace("]","")):
+                            print("PASO MSGID")
+                            score += 1
+                            break
+                elif i == 2:
+                    primerosBD = res[0][i].split(separador)
+                    for primeroBD in primerosBD:
+                        if re.findall(primeroBD, primerreceived):
+                            print("PASO PRIMERRCV")
+                            score += 1.5
+                            break
+                elif i == 4:
+                    utcsbd = res[0][i].split(separador)
+                    for utcbd in utcsbd:
+                        pattern = "([\-|\+]\d\d\d\d|(\(\w\w\w\)))"
+                        if re.findall(pattern, primerreceived):
                             try:
                                 utcbd = "[" + utcbd + "]"
                                 if re.findall(utcbd, primerreceived):
+                                    print("PASO UTC")
                                     score += 1
                                     break
                             except:
@@ -78,51 +141,23 @@ async def BackEnd(websocket, path):
                                 if re.findall(utcbd, primerreceived):
                                     score += 1
                                     break
-                    else:
-                        score += 1
-                elif i == 5:
-                    authsbd = res[0][i].split(";")
-                    maxi = int(authsbd[0])
-                    mini = int(authsbd[1])
-                    pattern = "(pass)"
-                    a = re.findall(pattern, auth)
-                    if int(len(a)) in range(mini, maxi+1):
-                        score += 1.5
-        elif primerreceived == penreceived:
-            for i,line in enumerate(res[0]):
-                if i == 0:
-                    msgidsbd = res[0][i].split(";")
-                    for msgidbd in msgidsbd:
-                        if re.match(msgidbd, msgid):
-                            score += 1
-                            break
-                elif i == 2:
-                    primerosBD = res[0][i].split(";")
-                    for primeroBD in primerosBD:
-                        if re.findall(primeroBD, primerreceived):
-                            score += 1.5
-                            break
-                elif i == 4:
-                    utcsbd = res[0][i].split(";")
-                    for utcbd in utcsbd:
-                        if len(utcbd) > 5:
-                            utcbd = "[" + utcbd + "]"
                         else:
-                            utcbd = "(" + utcbd + ")"
-                        if re.findall(utcbd, primerreceived):
                             score += 1
-                            break
                 elif i == 5:
-                    authsbd = res[0][i].split(";")
+                    authsbd = res[0][i].split(separador)
                     maxi = int(authsbd[0])
                     mini = int(authsbd[1])
                     pattern = "(pass)"
                     a = re.findall(pattern, auth)
                     if int(len(a)) in range(mini, maxi+1):
+                        print("PASO AUTH")
                         score += 1.5
     else:
-        score = 6
-    await websocket.send(str(score))
+        if cantidad > 4:
+            score = 0
+        else:
+            score = 6
+    await websocket.send(str(score-cantidad))
 
 
 
