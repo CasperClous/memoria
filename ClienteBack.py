@@ -27,7 +27,7 @@ def insert2(FROM, primerReceived, MSGID, AUTHRESULT, cnx, curs):
 def ConectarBaseDeDatos():
     cnx = ''
     try:
-        cnx = mysql.connector.connect(user='addCorreo', password='CorreoV@lidator2021', host='192.168.100.86', database='Validator')
+        cnx = mysql.connector.connect(user='addCorreo', password='', host='192.168.100.86', database='Validator')
         curs = cnx.cursor()
         return cnx, curs
     except mysql.connector.Error as err:
