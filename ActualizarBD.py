@@ -14,7 +14,7 @@ def ConectarBaseDeDatos():
     cnx = ""
     curs = ""
     try:
-        cnx = mysql.connector.connect(user='obtenerRegex', password='', host='localhost',
+        cnx = mysql.connector.connect(user='obtenerRegex', password='Obtener17489563', host='localhost',
                                       database='Validator', auth_plugin='mysql_native_password')
         curs = cnx.cursor()
         print("Conectado a la BD")
@@ -33,7 +33,7 @@ def InsertBD():
     cnx = ""
     curs =""
     try:
-        cnx = mysql.connector.connect(user='addCorreo', password='', host='192.168.100.86', database='Validator', auth_plugin='mysql_native_password')
+        cnx = mysql.connector.connect(user='addCorreo', password='CorreoV@lidator2021', host='192.168.100.86', database='Validator', auth_plugin='mysql_native_password')
         curs = cnx.cursor()
         print("Conectado a la BD")
     except mysql.connector.Error as err:
@@ -247,7 +247,6 @@ def obtener_Valores(correos):
                 if int(len(a)) in range(mini, maxi + 1):
                     tauth += 1
     if tmsgid == tprimero == tpen == tutc == tauth:
-        print("DELETEADO")
         qquery = f"DELETE FROM Coleccion WHERE Fromm = \"{line[0]}\""
         CURSSS.execute(qquery)
         CNXXX.commit()
@@ -269,14 +268,10 @@ for i, line in enumerate(resultados):
     qry = f"SELECT * FROM Validator.Correo WHERE Fromm = \"{FROMM}\""
     CURSSS.execute(qry)
     correos = CURSSS.fetchall()
-    print(FROMM)
     if correos:
         tmsgid, tprimero, tpen, tutc, tauth = obtener_Valores(correos)
         if not tmsgid == tprimero == tpen == tutc == tauth:
             maxi = max(tmsgid, tprimero, tpen, tutc, tauth)
-            print(maxi)
-            print(str(tmsgid) + "       " + str(tprimero) + "       " + str(tpen) + "       " + str(tutc) + "       " + str(tauth))
-            print("NO DELETEADO")
             if maxi != tmsgid:
                 qry = f"SELECT RegexID FROM Correo WHERE Fromm = \"{FROMM}\""
                 curs.execute(qry)
@@ -370,6 +365,5 @@ for i, line in enumerate(resultados):
             values = (regexMessageID,FROMM, primerR, penUlti, UTC, auth)
             CURSS.execute(query, values)
             CNXX.commit()
-            print("NUEVA DIRECCION DE CORREO AGREGADA")
         except mysql.connector.Error as error:
             print(error)

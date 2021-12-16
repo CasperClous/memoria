@@ -10,7 +10,7 @@ def ConectarBaseDeDatos():
     cnx = ""
     curs = ""
     try:
-        cnx = mysql.connector.connect(user='pluggin', password='', host='192.168.100.86',
+        cnx = mysql.connector.connect(user='pluggin', password='PluginV@lidator2021', host='192.168.100.86',
                                       database='Validator')
         curs = cnx.cursor()
         print("Conectado a la BD")
@@ -62,20 +62,17 @@ async def BackEnd(websocket, path):
                     for msgidbd in msgidsbd:
                         if re.match(msgidbd, msgid.replace("[","").replace("]","")):
                             score += 1
-                            print("PASO MSGID")
                             break
                 elif i == 2:
                     primerosBD = res[0][i].split(separador)
                     for primeroBD in primerosBD:
                         if re.findall(primeroBD, primerreceived):
-                            print("PASO PRIMERRCV")
                             score += 0.75
                             break
                 elif i == 3:
                     pensbd = res[0][i].split(separador)
                     for penbd in pensbd:
                         if re.findall(penbd, penreceived):
-                            print("PASO PENRECEV")
                             score += 0.75
                             break
                 elif i == 4:
@@ -88,7 +85,6 @@ async def BackEnd(websocket, path):
                                 try:
                                     utcbd = "[" + utcbd + "]"
                                     if re.findall(utcbd, primerreceived):
-                                        print("PASO UTC")
                                         score += 1
                                         break
                                 except:
@@ -107,7 +103,6 @@ async def BackEnd(websocket, path):
                     pattern = "(pass)"
                     a = re.findall(pattern, auth)
                     if int(len(a)) in range(mini, maxi+1):
-                        print("PASO AUTH")
                         score += 1.5
         elif primerreceived == penreceived:
             for i,line in enumerate(res[0]):
@@ -115,14 +110,12 @@ async def BackEnd(websocket, path):
                     msgidsbd = res[0][i].split(separador)
                     for msgidbd in msgidsbd:
                         if re.match(msgidbd, msgid.replace("[","").replace("]","")):
-                            print("PASO MSGID")
                             score += 1
                             break
                 elif i == 2:
                     primerosBD = res[0][i].split(separador)
                     for primeroBD in primerosBD:
                         if re.findall(primeroBD, primerreceived):
-                            print("PASO PRIMERRCV")
                             score += 1.5
                             break
                 elif i == 4:
@@ -133,7 +126,6 @@ async def BackEnd(websocket, path):
                             try:
                                 utcbd = "[" + utcbd + "]"
                                 if re.findall(utcbd, primerreceived):
-                                    print("PASO UTC")
                                     score += 1
                                     break
                             except:
@@ -150,11 +142,10 @@ async def BackEnd(websocket, path):
                     pattern = "(pass)"
                     a = re.findall(pattern, auth)
                     if int(len(a)) in range(mini, maxi+1):
-                        print("PASO AUTH")
                         score += 1.5
     else:
-        if cantidad > 4:
-            score = 0
+        if cantidad > 0:
+            score = 1
         else:
             score = 6
     await websocket.send(str(score-cantidad))
