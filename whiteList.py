@@ -27,7 +27,7 @@ def ConectarBaseDeDatos():
     cnx = ""
     curs = ""
     try:
-        cnx = mysql.connector.connect(user='pluggin', password='PluginV@lidator2021', host='192.168.100.86',
+        cnx = mysql.connector.connect(user='pluggin', password='', host='',
                                       database='Validator')
         curs = cnx.cursor()
         print("Conectado a la BD")
@@ -61,6 +61,6 @@ async def BackEnd(websocket, path):
         insert1(fromm, primerreceived, penreceived, msgid, auth, cnx, curs)
 
 
-start_server = websockets.serve(BackEnd, "192.168.100.86", 10003)
+start_server = websockets.serve(BackEnd, "", 10003)
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()
