@@ -27,7 +27,7 @@ def insert2(FROM, primerReceived, MSGID, AUTHRESULT, cnx, curs):
 def ConectarBaseDeDatos():
     cnx = ''
     try:
-        cnx = mysql.connector.connect(user='addCorreo', password='CorreoV@lidator2021', host='192.168.100.86', database='Validator')
+        cnx = mysql.connector.connect(user='addCorreo', password='', host='', database='Validator')
         curs = cnx.cursor()
         return cnx, curs
     except mysql.connector.Error as err:
@@ -68,7 +68,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
                     connection.close()
 
 if __name__ == "__main__":
-    HOST, PORT = '192.168.100.86', 10001
+    HOST, PORT = '', 10001
 
     # Create the server, binding to localhost on port 9999
     server = socketserver.ThreadingTCPServer((HOST, PORT), MyTCPHandler)
